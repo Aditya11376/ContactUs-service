@@ -16,7 +16,9 @@ Before storing any submission in PostgreSQL, the service performs **AI-powered S
 ### Key Capabilities
 - **Internal Gateway Security:** Protected by constant-time cryptographic comparison (`MessageDigest.isEqual`) against the `X-Internal-Secret` header so only authorized gateways can invoke submission endpoints.
 - **AI Spam Filtering & Classification:** Automatically checks incoming messages via the Gemini Gateway and categorizes valid requests into `SUPPORT`, `FEEDBACK`, `GENERAL_INQUIRY`, or `BUG_REPORT`.
-- **PostgreSQL Persistence:** Archives legitimate, categorized messages using Spring Data JPA (`contact_us_messages`).
+- **Resilient Fallback & Warm-up:** Configured with strict `RestClient` timeouts (5s connect / 8s read), automatic local rule-based classification fallback if the LLM gateway is unreachable, and a non-blocking startup warm-up ping.
+- **Neon / PostgreSQL Persistence:** Archives legitimate, categorized messages using Spring Data JPA (`contact_us_messages`) with HikariCP connection tuning and SSL support (`?sslmode=require`).
+- **Cloud-Optimized Fast Boot:** Tuned for constrained 512MB containers (`-XX:+UseSerialGC`, `-XX:TieredStopAtLevel=1`, lazy initialization, JMX disabled) to minimize cold-start times.
 - **Centralized Exception Handling:** Uses `@RestControllerAdvice` (`ContactUsExceptionHandler`) for standardized validation errors, spam rejection (`400 Bad Request`), and runtime exceptions.
 - **Container & Cloud Ready:** Ships with a multi-stage `Dockerfile` and local `compose.yaml` for seamless local and cloud deployment.
 
@@ -115,19 +117,22 @@ DATABASE_PORT=5432
 DATABASE_NAME=contact_us
 DATABASE_USERNAME=<YOUR_DB_USERNAME>
 DATABASE_PASSWORD=<YOUR_DB_PASSWORD>
+DATABASE_PARAMS=
 ```
 
-| Variable | Description | Default (Local) |
+| Variable | Description | Default / Example |
 |---|---|---|
 | `PORT` / `SERVER_PORT` | HTTP server port | `8083` |
 | `SPRING_DOCKER_COMPOSE_ENABLED` | Auto-start local `compose.yaml` DB | `true` (set `false` on Cloud) |
-| `GEMINI_SERVICE_URL` | Base URL of the Gemini AI Gateway | — |
+| `GEMINI_SERVICE_URL` | Base URL of the Gemini AI Gateway (no trailing slash) | — |
 | `APP_INTERNAL_SECRET` | Shared secret key for gateway auth | — |
-| `DATABASE_HOST` | PostgreSQL server hostname | `localhost` |
+| `DATABASE_HOST` | PostgreSQL / Neon hostname | `localhost` |
 | `DATABASE_PORT` | PostgreSQL port | `5432` |
 | `DATABASE_NAME` | Target database name | `contact_us` |
 | `DATABASE_USERNAME` | Database username | — |
 | `DATABASE_PASSWORD` | Database password | — |
+| `DATABASE_PARAMS` | Optional JDBC query parameters (e.g., `?sslmode=require` for Neon) | *(empty)* |
+| `HIBERNATE_DDL_AUTO` | JPA schema mode (`update` for dev, `none` for fast prod boot) | `update` |
 
 ---
 
@@ -147,11 +152,11 @@ DATABASE_PASSWORD=<YOUR_DB_PASSWORD>
 
 ---
 
-## 🐳 Docker & Cloud Deployment (Render)
+## 🐳 Docker & Cloud Deployment (Render + Neon)
 
-The repository includes a multi-stage `Dockerfile` optimized for cloud platforms like **Render**:
+The repository includes a multi-stage `Dockerfile` tuned for 512MB cloud containers (using SerialGC, Tiered Compilation Level 1, and lazy bean initialization for fast cold starts):
 
-1. **Provision a Managed PostgreSQL Database** (Render PostgreSQL or Neon).
+1. **Provision a Serverless PostgreSQL Database** (e.g., Neon or Render PostgreSQL).
 2. **Create a Web Service** connected to your repository using the `Docker` runtime.
 3. **Configure Health Check Path:** `/health`
 4. **Set Environment Variables** in your cloud dashboard:
@@ -159,3 +164,5 @@ The repository includes a multi-stage `Dockerfile` optimized for cloud platforms
    - `GEMINI_SERVICE_URL=<DEPLOYED_GEMINI_URL>`
    - `APP_INTERNAL_SECRET=<YOUR_INTERNAL_SECRET>`
    - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
+   - `DATABASE_PARAMS=?sslmode=require` *(required for Neon SSL connections)*
+   - `HIBERNATE_DDL_AUTO=none` *(optional, once tables are initialized for faster startup)*
