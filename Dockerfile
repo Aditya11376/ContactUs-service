@@ -24,4 +24,4 @@ ENV PORT=8083
 ENV SPRING_DOCKER_COMPOSE_ENABLED=false
 EXPOSE 8083
 
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseSerialGC", "-Xms128m", "-Xmx350m", "-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1", "-Dspring.jmx.enabled=false", "-Djava.security.egd=file:/dev/./urandom", "-jar", "app.jar"]
