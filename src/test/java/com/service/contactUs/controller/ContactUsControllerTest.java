@@ -52,7 +52,7 @@ class ContactUsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/contact-us")
+        mockMvc.perform(post("/api/contact-us")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isUnauthorized());
@@ -71,7 +71,7 @@ class ContactUsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/contact-us")
+        mockMvc.perform(post("/api/contact-us")
                         .header("X-Internal-Secret", "wrong-secret")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -92,7 +92,7 @@ class ContactUsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/contact-us")
+        mockMvc.perform(post("/api/contact-us")
                         .header("X-Internal-Secret", SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -118,7 +118,7 @@ class ContactUsControllerTest {
         doThrow(new SpamDetectedException("Message flagged as spam by AI evaluation."))
                 .when(iContactUsService).submitContactUsMessage(any(ContactUsDto.class));
 
-        mockMvc.perform(post("/contact-us")
+        mockMvc.perform(post("/api/contact-us")
                         .header("X-Internal-Secret", SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
@@ -137,7 +137,7 @@ class ContactUsControllerTest {
                 }
                 """;
 
-        mockMvc.perform(post("/contact-us")
+        mockMvc.perform(post("/api/contact-us")
                         .header("X-Internal-Secret", SECRET)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
