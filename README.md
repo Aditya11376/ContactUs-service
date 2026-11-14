@@ -166,3 +166,9 @@ The repository includes a multi-stage `Dockerfile` tuned for 512MB cloud contain
    - `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_NAME`, `DATABASE_USERNAME`, `DATABASE_PASSWORD`
    - `DATABASE_PARAMS=?sslmode=require` *(required for Neon SSL connections)*
    - `HIBERNATE_DDL_AUTO=none` *(optional, once tables are initialized for faster startup)*
+  
+---
+
+## 🛡️ License & Copyright
+
+&copy; 2026 **GUPTA SOFTWORKS ORGANISATION**. All rights reserved.  
